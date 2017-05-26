@@ -4,35 +4,57 @@ import Promise from 'bluebird';
 import classNames from 'classnames';
 import { Set } from 'immutable';
 import curry from 'lodash.curry';
+import PropTypes from 'prop-types';
 
 import TransitionChild from 'lib/transition-child';
 import Component from 'utils/component';
 
 export default class Transition extends Component {
+    static defaultProps = {
+        onBeforeAppear: () => null,
+        onAfterAppear: () => null,
+        onBeforeEnter: () => null,
+        onAfterEnter: () => null,
+        onBeforeLeave: () => null,
+        onAfterLeave: () => null,
+        transitionNames: {
+            enter: 'enter',
+            enterActive: 'enter-active',
+            leave: 'leave',
+            leaveActive: 'leave-active',
+        },
+    };
+
+    static propTypes = {
+        onBeforeAppear: PropTypes.func,
+        onAfterAppear: PropTypes.func,
+        onBeforeEnter: PropTypes.func,
+        onAfterEnter: PropTypes.func,
+        onBeforeLeave: PropTypes.func,
+        onAfterLeave: PropTypes.func,
+        transitionNames: PropTypes.object,
+    };
+
     state = { children: [] };
 
     leavingChildren = [];
     enteringChildren = [];
     enteringChildrenIterim = [];
+    transitionNames = {};
 
-    // childrenBuilder(child) {
-    //     return (
-    //         <TransitionChild
-    //             onBeforeEnter={this.props.onBeforeEnter}
-    //             onAfterEnter={this.props.onAfterEnter}
-    //             onBeforeLeave={this.props.onBeforeLeave}
-    //             onAfterLeave={this.props.onAfterLeave}
-    //             key={child.key}
-    //         >
-    //             {React.cloneElement(child.node, {
-    //                 className: classNames(
-    //                     child.node.props.className,
-    //                     ...child.className.toJS()
-    //                 ),
-    //             })}
-    //         </TransitionChild>
-    //     );
-    // }
+    constructor(props) {
+        super(props);
+
+        this.updateTransitionNames(props.transitionNames);
+    }
+
+    updateTransitionNames(transitionNames = {}) {
+        this.transitionNames = Object.assign(
+            {},
+            Transition.defaultProps.transitionNames,
+            transitionNames
+        );
+    }
 
     childrenBuilder(child) {
         const { node, key } = child;
@@ -53,129 +75,6 @@ export default class Transition extends Component {
         );
     }
 
-    /*getChildForKey(children, key) {
-        for (const i in children) {
-
-            if (children[i].key === key) return children[i];
-        }
-
-        return null;
-    }
-
-    findChildIndexByKey(children, key) {
-        for (const i in children) {
-            if (children[i].key == key) return i;
-        }
-
-        return -1;
-    }
-
-    updateChild = curry((key, nextChild, callback = null) => {
-        this.setState(prevState => {
-            const { children } = prevState;
-            const index = this.findChildIndexByKey(children, key);
-            const prevChild = children[index];
-
-            children[index] = Object.assign({}, prevChild, nextChild);
-
-            return { children };
-        }, callback);
-    })
-
-    removeChild(key, callback) {
-        this.setState(prevState => {
-            const children = prevState.children;
-            const index = this.findChildIndexByKey(children, key);
-
-            if (index > -1) children.splice(index, 1);
-
-            return { children };
-        }, callback);
-    }
-
-    initiateEnteringChildren() {
-        this.state.children
-            .filter(child => child.state === 'entering')
-            .map(child => {
-                const updateChild = this.updateChild(child.key);
-
-                child.state = null;
-                updateChild(child);
-
-
-                clearTimeout(child.timeout);
-                child.timeout = null;
-                child.className = child.className.clear().add('entering');
-                updateChild(child);
-
-                Promise.all([ this.props.onBeforeEnter() ])
-                    .then(() => {
-                        child.className = child.className.add('entering-active');
-
-                        child.timeout = setTimeout(() => {
-                            child.className = child.className.clear();
-
-                            updateChild(child, () => {
-                                this.props.onAfterEnter();
-                            });
-                        }, 1000);
-
-                        updateChild(child);
-                    });
-            });
-    }
-
-    initiateLeavingChildren() {
-        this.state.children
-            .filter(child => child.state === 'leaving')
-            .map(child => {
-                const updateChild = this.updateChild(child.key);
-
-                child.state = null;
-                updateChild(child);
-
-                clearTimeout(child.timeout);
-                child.timeout = null;
-                child.className = child.className.clear().add('leaving');
-                updateChild(child);
-
-                Promise.all([ this.props.onBeforeLeave() ])
-                    .then(() => {
-                        child.className = child.className.add('leaving-active');
-
-                        child.timeout = setTimeout(() => {
-                            child.className = child.className.clear();
-
-                            this.removeChild(child.key, this.props.onAfterLeave);
-                        }, 1000);
-
-                        updateChild(child);
-                    });
-            });
-    }
-
-    mergeChildren(prevChildren = [], nextChildren) {
-        // set all prevChildren as 'leaving' state
-        prevChildren.map(prevChild => prevChild.state = 'leaving');
-        React.Children.map(nextChildren, nextChild => {
-            const child = this.getChildForKey(prevChildren, nextChild.key);
-
-            if (child) {
-                child.state = null;
-            } else {
-                prevChildren.push({
-                    state: 'entering',
-                    node: nextChild,
-                    key: nextChild.key,
-                    className: new Set(),
-                    timeout: null,
-                });
-            }
-        });
-
-        return prevChildren;
-    }*/
-
     findChildFromKey(children, key) {
         for (const index in children) {
             if (children[index].key == key) return children[index];
@@ -189,6 +88,9 @@ export default class Transition extends Component {
             const children = Object.assign([], state.children);
 
             const child = this.findChildFromKey(children, key);
+
+            // TODO: Bail of no child, but need to investigate further why this would not be finding the child
+            if (!child) return false;
 
             Object.assign(
                 child.props,
@@ -220,12 +122,14 @@ export default class Transition extends Component {
                     delete this.enteringChildrenIterim[child.key];
 
                     updateProps(props => ({
-                        className: new Set(['entering']),
+                        className: new Set([this.transitionNames.enter]),
                     }));
 
                     setTimeout(() => {
                         updateProps(({ className }) => ({
-                            className: className.add('entering-active'),
+                            className: className.add(
+                                this.transitionNames.enterActive
+                            ),
                         }));
 
                         setTimeout(() => {
@@ -246,18 +150,32 @@ export default class Transition extends Component {
         this.leavingChildren = [];
 
         leavingChildren.map(async child => {
+            const updateProps = this.makeUpdateProps(child.key);
+
             await this.props.onBeforeLeave();
 
             const isKeyNotExist = this.makeKeyNotExist([child]);
 
-            this.setState(
-                ({ children }) => ({
-                    children: children.filter(isKeyNotExist),
-                }),
-                () => {
-                    this.props.onAfterLeave();
-                }
-            );
+            updateProps(props => ({
+                className: new Set([this.transitionNames.leave]),
+            }));
+
+            setTimeout(() => {
+                updateProps(({ className }) => ({
+                    className: className.add(this.transitionNames.leaveActive),
+                }));
+
+                setTimeout(() => {
+                    updateProps({ className: new Set() });
+
+                    this.setState(
+                        ({ children }) => ({
+                            children: children.filter(isKeyNotExist),
+                        }),
+                        this.props.onAfterEnter()
+                    );
+                }, 1000);
+            });
         });
     }
 
@@ -285,6 +203,8 @@ export default class Transition extends Component {
     }
 
     componentWillReceiveProps(nextProps) {
+        this.updateTransitionNames(nextProps.transitionNames);
+
         const existingChildren = this.state.children
             .concat(this.enteringChildren)
             .concat(this.enteringChildrenIterim);

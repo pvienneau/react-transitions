@@ -76,6 +76,12 @@ class Test extends Component {
                         onAfterEnter={() => console.log('onAfterEnter')}
                         onBeforeLeave={this.onBeforeLeave}
                         onAfterLeave={() => console.log('onAfterLeave')}
+                        transitionNames={{
+                            enter: 'enter',
+                            enterActive: 'enter-active',
+                            leave: 'leave',
+                            leaveActive: 'leave-active',
+                        }}
                     >
                         {this.state.children}
                     </Transition>

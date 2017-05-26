@@ -3,7 +3,7 @@ import React from 'react';
 import Promise from 'bluebird';
 import classNames from 'classnames';
 import { Set } from 'immutable';
-import { curry } from 'lodash.curry';
+import curry from 'lodash.curry';
 
 import TransitionChild from 'lib/transition-child';
 import Component from 'utils/component';
@@ -35,7 +35,22 @@ export default class Transition extends Component {
     // }
 
     childrenBuilder(child) {
-        return child;
+        const { node, key } = child;
+        const { className, ...props } = child.props;
+
+        return React.cloneElement(
+            node,
+            Object.assign(
+                {
+                    key,
+                    className: classNames(
+                        className.toJS(),
+                        node.props.className
+                    ),
+                },
+                props
+            )
+        );
     }
 
     /*getChildForKey(children, key) {
@@ -161,6 +176,31 @@ export default class Transition extends Component {
         return prevChildren;
     }*/
 
+    findChildFromKey(children, key) {
+        for (const index in children) {
+            if (children[index].key == key) return children[index];
+        }
+
+        return false;
+    }
+
+    makeUpdateProps = curry((key, nextProps, callback = null) => {
+        this.setState(state => {
+            const children = Object.assign([], state.children);
+
+            const child = this.findChildFromKey(children, key);
+
+            Object.assign(
+                child.props,
+                typeof nextProps === 'function'
+                    ? nextProps(child.props)
+                    : nextProps
+            );
+
+            return { children };
+        }, callback);
+    });
+
     initiateEnteringChildren() {
         if (!this.enteringChildren.length) return false;
 
@@ -168,18 +208,32 @@ export default class Transition extends Component {
         this.enteringChildren = [];
 
         enteringChildren.map(async child => {
+            const updateProps = this.makeUpdateProps(child.key);
+
             this.enteringChildrenIterim[child.key] = child;
 
             await this.props.onBeforeEnter();
 
             this.setState(
-                ({ children }) => ({
-                    children: children.concat(child),
-                }),
+                ({ children }) => ({ children: children.concat(child) }),
                 () => {
                     delete this.enteringChildrenIterim[child.key];
 
-                    this.props.onAfterEnter();
+                    updateProps(props => ({
+                        className: new Set(['entering']),
+                    }));
+
+                    setTimeout(() => {
+                        updateProps(({ className }) => ({
+                            className: className.add('entering-active'),
+                        }));
+
+                        setTimeout(() => {
+                            updateProps({ className: new Set() });
+
+                            this.props.onAfterEnter();
+                        }, 1000);
+                    });
                 }
             );
         });
@@ -218,7 +272,11 @@ export default class Transition extends Component {
         const isNextKeyNotExist = this.makeKeyNotExist(nextChildren);
 
         this.enteringChildren = this.enteringChildren.concat(
-            nextChildren.filter(isPrevKeyNotExist)
+            nextChildren.filter(isPrevKeyNotExist).map(child => ({
+                key: child.key,
+                node: child,
+                props: { className: new Set() },
+            }))
         );
 
         this.leavingChildren = this.leavingChildren.concat(

@@ -38,7 +38,7 @@ class Test extends Component {
         const key = uniqueId();
 
         children.push(
-            <div key={key} className={'list-item'}>
+            <div key={key} className="item">
                 {key}
                 <button
                     onClick={e => {
@@ -68,28 +68,25 @@ class Test extends Component {
         return (
             <div>
                 <button onClick={this.onClickHandler}>Add</button>
-                <Transition
-                    onBeforeAppear={() => console.log('onBeforeAppear')}
-                    onAfterAppear={() => console.log('onAfterAppear')}
-                    onBeforeEnter={this.onBeforeEnter}
-                    onAfterEnter={() => console.log('onAfterEnter')}
-                    onBeforeLeave={this.onBeforeLeave}
-                    onAfterLeave={() => console.log('onAfterLeave')}
-                >
-                    {this.state.children}
-                </Transition>
+                <div className="list">
+                    <Transition
+                        onBeforeAppear={() => console.log('onBeforeAppear')}
+                        onAfterAppear={() => console.log('onAfterAppear')}
+                        onBeforeEnter={this.onBeforeEnter}
+                        onAfterEnter={() => console.log('onAfterEnter')}
+                        onBeforeLeave={this.onBeforeLeave}
+                        onAfterLeave={() => console.log('onAfterLeave')}
+                    >
+                        {this.state.children}
+                    </Transition>
+                </div>
             </div>
         );
     }
 }
 
 render(
-    <div
-        style={{
-            maxWidth: 1200,
-            margin: '0 auto',
-        }}
-    >
+    <div className="container">
         <Test />
     </div>,
     document.getElementById('main')

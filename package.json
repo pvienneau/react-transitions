@@ -9,13 +9,21 @@
         "babel-register": "^6.24.1",
         "bluebird": "^3.5.0",
         "classnames": "^2.2.5",
+        "css-loader": "^0.28.3",
+        "dotenv-webpack": "^1.4.5",
+        "extract-text-webpack-plugin": "^2.1.0",
         "immutable": "^3.8.1",
         "lodash": "^4.17.4",
         "lodash.curry": "^4.1.1",
         "lodash.uniqueid": "^4.0.1",
+        "node-sass": "^4.5.3",
+        "object.values": "^1.0.4",
         "react": "^15.5.4",
         "react-autobind": "^1.0.6",
-        "react-dom": "^15.5.4"
+        "react-dom": "^15.5.4",
+        "sass-loader": "^6.0.5",
+        "style-loader": "^0.18.1",
+        "webpack-glob-entries": "^1.0.1"
     },
     "devDependencies": {
         "babel-eslint": "^7.2.3",

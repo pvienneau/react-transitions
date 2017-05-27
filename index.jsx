@@ -76,19 +76,12 @@ class Test extends Component {
                 <button onClick={this.onClickHandler}>Add</button>
                 <div className="list">
                     <Transition
-                        transitionEnterTimeout={5000}
                         onBeforeAppear={() => console.log('onBeforeAppear')}
                         onAfterAppear={() => console.log('onAfterAppear')}
                         onBeforeEnter={this.onBeforeEnter}
                         onAfterEnter={() => console.log('onAfterEnter')}
                         onBeforeLeave={this.onBeforeLeave}
                         onAfterLeave={() => console.log('onAfterLeave')}
-                        transitionNames={{
-                            enter: 'enter',
-                            enterActive: 'enter-active',
-                            leave: 'leave',
-                            leaveActive: 'leave-active',
-                        }}
                     >
                         {this.state.children}
                     </Transition>

@@ -82,18 +82,21 @@ export default class Transition extends Component {
         const { node, key } = child;
         const { className, ...props } = child.props;
 
-        return React.cloneElement(
-            node,
-            Object.assign(
-                {
-                    key,
-                    className: classNames(
-                        className.toJS(),
-                        node.props.className
-                    ),
-                },
-                props
-            )
+        return (
+            <TransitionChild key={key}>
+                {React.cloneElement(
+                    node,
+                    Object.assign(
+                        {
+                            className: classNames(
+                                className.toJS(),
+                                node.props.className
+                            ),
+                        },
+                        props
+                    )
+                )}
+            </TransitionChild>
         );
     }
 

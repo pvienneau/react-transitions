@@ -12,6 +12,12 @@ import Component from 'utils/component';
 
 export default class Transition extends Component {
     static defaultProps = {
+        transitionAppear: false,
+        transitionEnter: true,
+        transitionLeave: true,
+        transitionAppearTimeout: 500,
+        transitionEnterTimeout: 500,
+        transitionLeaveTimeout: 500,
         onBeforeAppear: () => null,
         onAfterAppear: () => null,
         onBeforeEnter: () => null,
@@ -29,6 +35,12 @@ export default class Transition extends Component {
     };
 
     static propTypes = {
+        transitionAppear: PropTypes.bool,
+        transitionEnter: PropTypes.bool,
+        transitionLeave: PropTypes.bool,
+        transitionAppearTimeout: PropTypes.number,
+        transitionEnterTimeout: PropTypes.number,
+        transitionLeaveTimeout: PropTypes.number,
         onBeforeAppear: PropTypes.func,
         onAfterAppear: PropTypes.func,
         onBeforeEnter: PropTypes.func,
@@ -99,7 +111,7 @@ export default class Transition extends Component {
 
             const child = this.findChildFromKey(children, key);
 
-            // TODO: Bail of no child, but need to investigate further why this would not be finding the child
+            // TODO: Bail if no child, but need to investigate further why this would not be finding the child
             if (!child) return false;
 
             Object.assign(
@@ -121,11 +133,21 @@ export default class Transition extends Component {
             this.enteringChildren = [];
 
             enteringChildren.map(async child => {
+                await this.props[`onBefore${startCase(actionBaseName)}`]();
+
+                if (!this.props[`transition${startCase(actionBaseName)}`])
+                    return this.setState(
+                        ({ children }) => ({
+                            children: children.concat(child),
+                        }),
+                        () => {
+                            this.props[`onAfter${startCase(actionBaseName)}`]();
+                        }
+                    );
+
                 const updateProps = this.makeUpdateProps(child.key);
 
                 this.enteringChildrenIterim[child.key] = child;
-
-                await this.props[`onBefore${startCase(actionBaseName)}`]();
 
                 this.setState(
                     ({ children }) => ({ children: children.concat(child) }),
@@ -153,7 +175,7 @@ export default class Transition extends Component {
                                 this.props[
                                     `onAfter${startCase(actionBaseName)}`
                                 ]();
-                            }, 1000);
+                            }, this.props[`transition${startCase(actionBaseName)}Timeout`]);
                         });
                     }
                 );
@@ -161,18 +183,28 @@ export default class Transition extends Component {
         };
     });
 
-    initiateLeavingChildren() {
+    initiateLeavingChildren(hasAnimate) {
         if (!this.leavingChildren.length) return false;
 
         const leavingChildren = this.leavingChildren;
         this.leavingChildren = [];
 
         leavingChildren.map(async child => {
-            const updateProps = this.makeUpdateProps(child.key);
-
             await this.props.onBeforeLeave();
 
             const isKeyNotExist = this.makeKeyNotExist([child]);
+            const removeChildFromState = () => {
+                this.setState(
+                    ({ children }) => ({
+                        children: children.filter(isKeyNotExist),
+                    }),
+                    this.props.onAfterEnter()
+                );
+            };
+
+            if (!hasAnimate) return removeChildFromState();
+
+            const updateProps = this.makeUpdateProps(child.key);
 
             updateProps(props => ({
                 className: new Set([this.transitionNames.leave]),
@@ -186,13 +218,8 @@ export default class Transition extends Component {
                 setTimeout(() => {
                     updateProps({ className: new Set() });
 
-                    this.setState(
-                        ({ children }) => ({
-                            children: children.filter(isKeyNotExist),
-                        }),
-                        this.props.onAfterEnter()
-                    );
-                }, 1000);
+                    removeChildFromState();
+                }, this.props.transitionLeaveTimeout);
             });
         });
     }
@@ -234,13 +261,13 @@ export default class Transition extends Component {
         // Children lifecycles
 
         if (!this.hasAppeared) {
-            this.initiateAppearingChildren();
+            this.initiateAppearingChildren(this.props.transitionAppear);
             this.hasAppeared = true;
         } else {
-            this.initiateEnteringChildren();
+            this.initiateEnteringChildren(this.props.transitionEnter);
         }
 
-        this.initiateLeavingChildren();
+        this.initiateLeavingChildren(this.props.transitionLeave);
     }
 
     render() {

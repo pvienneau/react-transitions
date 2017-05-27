@@ -76,6 +76,7 @@ class Test extends Component {
                 <button onClick={this.onClickHandler}>Add</button>
                 <div className="list">
                     <Transition
+                        transitionEnterTimeout={5000}
                         onBeforeAppear={() => console.log('onBeforeAppear')}
                         onAfterAppear={() => console.log('onAfterAppear')}
                         onBeforeEnter={this.onBeforeEnter}

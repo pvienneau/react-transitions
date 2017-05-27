@@ -12,6 +12,8 @@ class Test extends Component {
 
     componentDidMount() {
         console.log('Component: component did mount');
+
+        for (let i = 0; i++ < 5; this.addItem());
     }
 
     componentWillUnmount() {
@@ -34,6 +36,10 @@ class Test extends Component {
     onClickHandler(e) {
         e.preventDefault();
 
+        this.addItem();
+    }
+
+    addItem() {
         const { children } = this.state;
         const key = uniqueId();
 

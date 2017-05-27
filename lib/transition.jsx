@@ -4,6 +4,7 @@ import Promise from 'bluebird';
 import classNames from 'classnames';
 import { Set } from 'immutable';
 import curry from 'lodash.curry';
+import startCase from 'lodash.startcase';
 import PropTypes from 'prop-types';
 
 import TransitionChild from 'lib/transition-child';
@@ -22,6 +23,8 @@ export default class Transition extends Component {
             enterActive: 'enter-active',
             leave: 'leave',
             leaveActive: 'leave-active',
+            appear: 'appear',
+            appearActive: 'appear-active',
         },
     };
 
@@ -42,10 +45,17 @@ export default class Transition extends Component {
     enteringChildrenIterim = [];
     transitionNames = {};
 
+    hasAppeared = false;
+
     constructor(props) {
         super(props);
 
+        this.initiateEnteringChildren = this.makeIntroChildren('enter');
+        this.initiateAppearingChildren = this.makeIntroChildren('appear');
+
         this.updateTransitionNames(props.transitionNames);
+
+        this.mergeChildren([], props.children);
     }
 
     updateTransitionNames(transitionNames = {}) {
@@ -103,45 +113,53 @@ export default class Transition extends Component {
         }, callback);
     });
 
-    initiateEnteringChildren() {
-        if (!this.enteringChildren.length) return false;
+    makeIntroChildren = curry(actionBaseName => {
+        return () => {
+            if (!this.enteringChildren.length) return false;
 
-        const enteringChildren = Object.assign([], this.enteringChildren);
-        this.enteringChildren = [];
+            const enteringChildren = Object.assign([], this.enteringChildren);
+            this.enteringChildren = [];
 
-        enteringChildren.map(async child => {
-            const updateProps = this.makeUpdateProps(child.key);
+            enteringChildren.map(async child => {
+                const updateProps = this.makeUpdateProps(child.key);
 
-            this.enteringChildrenIterim[child.key] = child;
+                this.enteringChildrenIterim[child.key] = child;
 
-            await this.props.onBeforeEnter();
+                await this.props[`onBefore${startCase(actionBaseName)}`]();
 
-            this.setState(
-                ({ children }) => ({ children: children.concat(child) }),
-                () => {
-                    delete this.enteringChildrenIterim[child.key];
+                this.setState(
+                    ({ children }) => ({ children: children.concat(child) }),
+                    () => {
+                        delete this.enteringChildrenIterim[child.key];
 
-                    updateProps(props => ({
-                        className: new Set([this.transitionNames.enter]),
-                    }));
-
-                    setTimeout(() => {
-                        updateProps(({ className }) => ({
-                            className: className.add(
-                                this.transitionNames.enterActive
-                            ),
+                        updateProps(props => ({
+                            className: new Set([
+                                this.transitionNames[actionBaseName],
+                            ]),
                         }));
 
                         setTimeout(() => {
-                            updateProps({ className: new Set() });
+                            updateProps(({ className }) => ({
+                                className: className.add(
+                                    this.transitionNames[
+                                        `${actionBaseName}Active`
+                                    ]
+                                ),
+                            }));
 
-                            this.props.onAfterEnter();
-                        }, 1000);
-                    });
-                }
-            );
-        });
-    }
+                            setTimeout(() => {
+                                updateProps({ className: new Set() });
+
+                                this.props[
+                                    `onAfter${startCase(actionBaseName)}`
+                                ]();
+                            }, 1000);
+                        });
+                    }
+                );
+            });
+        };
+    });
 
     initiateLeavingChildren() {
         if (!this.leavingChildren.length) return false;
@@ -214,7 +232,14 @@ export default class Transition extends Component {
 
     componentDidUpdate() {
         // Children lifecycles
-        this.initiateEnteringChildren();
+
+        if (!this.hasAppeared) {
+            this.initiateAppearingChildren();
+            this.hasAppeared = true;
+        } else {
+            this.initiateEnteringChildren();
+        }
+
         this.initiateLeavingChildren();
     }
 

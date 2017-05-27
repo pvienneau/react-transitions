@@ -24,6 +24,16 @@
     }
 }
 
+.appear {
+    transition: opacity 1000ms ease-in-out;
+    background-color: #c17afd;
+    opacity: 0.2;
+
+    &-active {
+        opacity: 1;
+    }
+}
+
 .enter {
     transition: opacity 1000ms ease-in-out;
     background-color: #3ca543;

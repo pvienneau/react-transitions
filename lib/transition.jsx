@@ -135,6 +135,8 @@ export default class Transition extends Component {
             const enteringChildren = Object.assign([], this.enteringChildren);
             this.enteringChildren = [];
 
+            this.enteringChildrenIterim = enteringChildren;
+
             enteringChildren.map(async child => {
                 await this.props[`onBefore${startCase(actionBaseName)}`]();
 
@@ -149,8 +151,6 @@ export default class Transition extends Component {
                     );
 
                 const updateProps = this.makeUpdateProps(child.key);
-
-                this.enteringChildrenIterim[child.key] = child;
 
                 this.setState(
                     ({ children }) => ({ children: children.concat(child) }),

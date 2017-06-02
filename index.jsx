@@ -3,12 +3,18 @@ import React from 'react';
 import { render } from 'react-dom';
 import Promise from 'bluebird';
 import uniqueId from 'lodash.uniqueId';
+import autobind from 'react-autobind';
 
-import Transition from 'lib/transition';
-import Component from 'utils/component';
+import { Transition } from 'dist';
 
-class Test extends Component {
+class Test extends React.Component {
     state = { children: [] };
+
+    constructor(props) {
+        super(props);
+
+        autobind(this);
+    }
 
     componentDidMount() {
         console.log('Component: component did mount');

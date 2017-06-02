@@ -1,16 +1,19 @@
 import React from 'react';
 
-import Promise from 'bluebird';
 import classNames from 'classnames';
 import { Set } from 'immutable';
 import curry from 'lodash.curry';
-import startCase from 'lodash.startcase';
+import upperFirst from 'lodash.upperfirst';
+import camelCase from 'lodash.camelcase';
+import compose from 'lodash.compose';
 import PropTypes from 'prop-types';
+import autobind from 'react-autobind';
 
 import TransitionChild from 'lib/transition-child';
-import Component from 'utils/component';
 
-export default class Transition extends Component {
+const pascaleCase = compose(upperFirst, camelCase);
+
+export default class Transition extends React.Component {
     static defaultProps = {
         transitionAppear: false,
         transitionEnter: true,
@@ -68,6 +71,8 @@ export default class Transition extends Component {
         this.updateTransitionNames(props.transitionNames);
 
         this.mergeChildren([], props.children);
+
+        autobind(this);
     }
 
     updateTransitionNames(transitionNames = {}) {
@@ -138,15 +143,17 @@ export default class Transition extends Component {
             this.enteringChildrenIterim = enteringChildren;
 
             enteringChildren.map(async child => {
-                await this.props[`onBefore${startCase(actionBaseName)}`]();
+                await this.props[`onBefore${pascaleCase(actionBaseName)}`]();
 
-                if (!this.props[`transition${startCase(actionBaseName)}`])
+                if (!this.props[`transition${pascaleCase(actionBaseName)}`])
                     return this.setState(
                         ({ children }) => ({
                             children: children.concat(child),
                         }),
                         () => {
-                            this.props[`onAfter${startCase(actionBaseName)}`]();
+                            this.props[
+                                `onAfter${pascaleCase(actionBaseName)}`
+                            ]();
                         }
                     );
 
@@ -176,9 +183,9 @@ export default class Transition extends Component {
                                 updateProps({ className: new Set() });
 
                                 this.props[
-                                    `onAfter${startCase(actionBaseName)}`
+                                    `onAfter${pascaleCase(actionBaseName)}`
                                 ]();
-                            }, this.props[`transition${startCase(actionBaseName)}Timeout`]);
+                            }, this.props[`transition${pascaleCase(actionBaseName)}Timeout`]);
                         });
                     }
                 );

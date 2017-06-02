@@ -1,8 +1,14 @@
 import React from 'react';
 
-import Component from 'utils/component';
+import autobind from 'react-autobind';
 
-export default class TransitionChild extends Component {
+export default class TransitionChild extends React.Component {
+    constructor(props) {
+        super(props);
+
+        autobind(this);
+    }
+
     render() {
         return (
             <div>
